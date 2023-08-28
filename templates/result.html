@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Classifier Result</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <h1 class="text-center mb-4">Classification Result</h1>
+                <div class="card">
+                    <img src="{{ url_for('static', filename='uploads/' ~ result_image_filename) }}" class="card-img-top" alt="Result Image">
+                    <div class="card-body">
+                        <h5 class="card-title">Max Probability Class: {{ class_name }}</h5>
+                        <h5 class="card-title">Plant Name: {{ selected_model }}</h5>
+                        <p class="card-text">Probability: {{ probability }}%</p>
+                        <a href="/" class="btn btn-primary">Upload another image</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

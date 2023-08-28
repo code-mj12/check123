@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+{% if error_message %}
+<div class="alert alert-danger">
+    {{ error_message }}
+</div>
+{% endif %}
+<html>
+<head>
+    <title>Plant Image Classifier</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <h1 class="text-center mb-4">Upload an Image</h1>
+                <form action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="input-group mb-3">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="imageInput" name="file" onchange="displayFileName()">
+                            <label class="custom-file-label" for="imageInput" id="fileLabel">Choose file</label>
+                        </div>
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function displayFileName() {
+            const input = document.getElementById('imageInput');
+            const label = document.getElementById('fileLabel');
+            label.textContent = input.files[0].name;
+        }
+    </script>
+</body>
+</html>
