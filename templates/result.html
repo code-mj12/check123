@@ -16,6 +16,13 @@
                         <h5 class="card-title">Plant Name: {{ selected_model }}</h5>
                         <p class="card-text">Probability: {{ probability }}%</p>
                         <a href="/" class="btn btn-primary">Upload another image</a>
+                        <form method="post" action="{{ url_for('feedback', image_filename=result_image_filename) }}">
+                            <div class="form-group">
+                                <label for="feedback">Provide Feedback if the image prediction is wrong or click 'upload another image' if correct:</label>
+                                <textarea class="form-control" id="feedback" name="feedback" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                        </form>
                     </div>
                 </div>
             </div>
