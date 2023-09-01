@@ -5,14 +5,22 @@ import os
 from werkzeug.utils import secure_filename
 from PIL import Image
 import time
+import pathlib
+import sqlite3
+from flask import g
+
+temp = pathlib.PosixPath
+pathlib.PosixPath = pathlib.WindowsPath
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = 'static/uploads'
 RESULT_FOLDER = 'static/uploads'  # Change this to the desired directory for saving result images
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
 
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULT_FOLDER'] = RESULT_FOLDER
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -22,13 +30,28 @@ def index():
     error_message = request.args.get('error_message', None)
     return render_template('index.html', error_message=error_message)
 
+def init_db():
+    conn = sqlite3.connect('feedback.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            image_filename TEXT,
+            prediction TEXT,
+            feedback TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()  # Call this function to initialize the database
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return redirect(request.url)
     
     file = request.files['file']
-    
     
     if file.filename == '':
         return redirect(request.url)
@@ -39,7 +62,7 @@ def upload_file():
         file.save(filepath)
         file.close()  # Close the file
         
-        main_model = YOLO('/home/omen2/Desktop/1st_iter/weights/google_best.pt')
+        main_model = YOLO('C:/Users/Majid Ahmad/Desktop/rasberry_flask/weights/main_other_best.pt')
         plant_type = main_model(filepath)
         plant_prob = plant_type[0].probs.data.tolist()
         main_confidence=np.max(plant_prob)
@@ -53,11 +76,17 @@ def upload_file():
             print(main_confidence)
             return redirect(url_for('index', error_message="Image uploaded is not predictable. Please upload another image."))
 
+        if selected_model == 'others':
+            os.remove(filepath)
+            print(main_confidence)
+            return redirect(url_for('index', error_message="Image uploaded is not predictable. Please upload another image."))
+
+
         if selected_model == 'Rasperries':
             model = YOLO('weights/best_rasberry.pt')
         elif selected_model == 'Blackberries':
             model = YOLO('weights/best_blackberry2.pt')
-
+        
         results = model(filepath)
         
         names_dict = results[0].names
@@ -77,7 +106,17 @@ def upload_file():
         result_image_path = os.path.join(app.config['RESULT_FOLDER'], result_image_filename)
         processed_img.save(result_image_path)
 
-        # os.remove(filepath)  # Remove the uploaded file
+
+        conn = sqlite3.connect('feedback.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO feedback (image_filename, prediction, feedback)
+            VALUES (?, ?, ?)
+        ''', (result_image_filename, max_prob_class, None))
+        conn.commit()
+        conn.close()
+        os.remove(filepath)  # Remove the uploaded file
+
         c_prob= int(100*np.max(probs))
         if c_prob == 100:
             c_prob = 99
@@ -86,6 +125,22 @@ def upload_file():
                                result_image_filename=result_image_filename,selected_model=selected_model)
     
     return 'Invalid file format'
+
+@app.route('/feedback/<image_filename>', methods=['POST'])
+def feedback(image_filename):
+    feedback_text = request.form.get('feedback')
+
+    conn = sqlite3.connect('feedback.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE feedback
+        SET feedback = ?
+        WHERE image_filename = ?
+    ''', (feedback_text, image_filename))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
